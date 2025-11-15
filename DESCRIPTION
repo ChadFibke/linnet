@@ -1,12 +1,27 @@
 Package: linnet
-Title: What the Package Does (One Line, Title Case)
-Version: 0.0.0.9000
+Title: Groups SARS-CoV-2 Lineages with Directed Networks
+Version: 0.0.1
 Authors@R: 
-    person("First", "Last", , "first.last@example.com", role = c("aut", "cre"),
-           comment = c(ORCID = "YOUR-ORCID-ID"))
-Description: What the package does (one paragraph).
-License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
-    license
+    person("Chad", "Fibke", , "c.fibke@hotmail.com", role = c("aut", "cre")
+Description: Collects current SARS-CoV-2 PANGO lineage child-parent relations 
+    from outbreak.info and repersents them as a directed network structure. The
+    package leverages this evolutionary relationship to cluster SARS-CoV-2 
+    lineages into parental lineages based on a specified threshold or target 
+    number of lineages. The aggregation can highlight predominant lineages for 
+    downstream analytical, visualization, or reporting workflows.
+URL: https://github.com/ChadFibke/linnet
+BugReports: https://github.com/ChadFibke/linnet/issues
+Depends: R (>= 4.0)
+License: `use_mit_license()`
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.2.3
+RoxygenNote: 7.3.3
+Imports:
+    data.table,
+    httr,
+    igraph,
+    jsonlite,
+    yaml
+Suggests: 
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
