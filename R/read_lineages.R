@@ -3,7 +3,8 @@
 #' `read_lineages()` reads in the current SARS-CoV-2 PANGO lineage data from
 #'  outbreak.info and represents this information in a directed network
 #'
-
+#' @importFrom data.table `:=`
+#' 
 #' @returns An igraph object.
 #' 
 #' @examples
@@ -46,7 +47,7 @@ read_lineages <- function() {
               , parent := gsub(pattern = "\\*$", replacement = "",x = parent)]
   
   # Return network from parent-child relations
-  return( igraph::graph_from_data_frame(d = tree_data[, .(parent, child)],
+  return( igraph::graph_from_data_frame(d = tree_dt[, .(parent, child)],
                                                  directed = TRUE)
   )
   
