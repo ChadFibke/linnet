@@ -27,9 +27,16 @@
       parent = if( length(entry$parent) == 0 ) NA_character_ else entry$parent,
       recombinant_parent = ifelse(
         !is.null(entry$recombinant_parent),
-        paste( unique(unlist(strsplit( entry$recombinant_parent, split = ","))),collapse = ","),
-        NA
-        )
+        paste( 
+          unique( 
+            gsub(
+              unlist(
+                strsplit( entry$recombinant_parent, split = ",")
+                )
+              , pattern = "\\*$", replacement = "")
+            )
+          ,collapse = ","),
+        NA )
       ) 
     }),
     fill = TRUE )
@@ -45,8 +52,7 @@
           , data.table::melt( .SD, id.vars = c("name"),
                               measure.vars = patterns("^parent"),
                               value.name = "parent") ][
-                                !is.na(parent), .( parent, child = name) ][
-                                  , parent := gsub(pattern = "\\*$", replacement = "",x = parent) ]
+                                !is.na(parent) & name != parent , .( parent, child = name) ]
   
   return(dt_tree)
 }
