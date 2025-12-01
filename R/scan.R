@@ -2,8 +2,6 @@
 #' 
 #' `decedents()` returns all SARS-CoV-2 lineages descending the lineage of
 #'  interest. 
-#'
-#' @importFrom 
 #' 
 #' @param graph_obj an igraph object constructed from `read_lineages()`
 #'     depicting all SARS-CoV-2 lineage parent/child relationships.
@@ -16,7 +14,7 @@
 #' 
 #' @examples
 #' #An example of pulling all SARS-CoV-2 sub-lineages of KP.3.1.1, while removing
-#' all recombinants and their decedents.
+#' #all recombinants and their decedents.
 #' lineages <- read_lineages()
 #' decedents(graph_obj = lineages, lineage_of_interest = "KP.3.1.1", remove_recombinants = TRUE)
 #'
@@ -25,10 +23,9 @@
 #' @export
 decedents <- function(graph_obj = NULL,
                  lineage_of_interest = NULL,
-                 relation = NULL,
                  remove_recombinants = FALSE) {
   
-  if (!is.igraph(graph_obj)) {
+  if (!igraph::is.igraph(graph_obj)) {
     stop("Must supply an igraph object for 'graph_obj'")
   }
   
@@ -48,9 +45,11 @@ decedents <- function(graph_obj = NULL,
                                                    lineage_of_interest,
                                                    mode = "out") ) 
   
+  
+  
   if ( remove_recombinants ) {
     
-    # Identify and remove nested recombinants within lineages of interest
+    # Identify and remove nested recombinants under lineages of interest
     nested_recombinants <- names(which(igraph::degree(graph_obj,
                                                        v = setdiff(children,
                                                                    lineage_of_interest),
@@ -67,21 +66,22 @@ decedents <- function(graph_obj = NULL,
       )
     
     # Remove nested recombinants
-    return( setdiff( children, nested_recombinants ) )
+    return( setdiff( children, c(nested_recombinants, lineage_of_interest) ) )
     
     
   } else {
     
-    return( children )
+    return( setdiff( children, lineage_of_interest) )
     
   }
 
 }
 
+
+#' Lists All Direct Parents to a Given Lineage
+#' 
 #' `parents()` returns all direct SARS-CoV-2 parental lineages to the lineage of
 #'  interest. 
-#'
-#' @importFrom 
 #' 
 #' @param graph_obj an igraph object constructed from `read_lineages()`
 #'     depicting all SARS-CoV-2 lineage parent/child relationships.
@@ -99,9 +99,9 @@ decedents <- function(graph_obj = NULL,
 #' parents(graph_obj = lineages, lineage_of_interest = "XFG")
 #' 
 #' @export
-parents <- function(graph_obj = NULL , lineage_of_interest = NULL) {
+parents <- function(graph_obj = NULL, lineage_of_interest = NULL) {
   
-  if (!is.igraph(graph_obj)) {
+  if (!igraph::is.igraph(graph_obj)) {
     stop("Must supply an igraph object for 'graph_obj'")
   }
   
@@ -110,15 +110,14 @@ parents <- function(graph_obj = NULL , lineage_of_interest = NULL) {
   }
   
   # Provide NA if lineage is not found in tree 
-  if ( is.na(match(lineage_of_interest,  V(graph_obj)$name )) ) {
+  if ( is.na(match(lineage_of_interest, V(graph_obj)$name)) ) {
     return( NA_character_ )
   }
   
   
-  result <- paste(unlist(igraph::as_ids( igraph::neighbors(graph_obj,
-                                                           lineage_of_interest,
-                                                           mode = "in"))),
-                  collapse = ", ")
+  parents <- unlist(igraph::as_ids( igraph::neighbors(graph_obj,
+                                                     lineage_of_interest,
+                                                     mode = "in")))
   
-  return( result )
+  return( parents )
 }

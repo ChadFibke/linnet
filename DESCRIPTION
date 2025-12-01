@@ -2,7 +2,7 @@ Package: linnet
 Title: Groups SARS-CoV-2 Lineages with Directed Networks
 Version: 0.0.1
 Authors@R: 
-    person("Chad", "Fibke", , "c.fibke@hotmail.com", role = c("aut", "cre")
+    person("Chad", "Fibke", email = "c.fibke@hotmail.com", role = c("aut", "cre"))
 Description: Collects current SARS-CoV-2 PANGO lineage child-parent relations 
     from outbreak.info and repersents them as a directed network structure. The
     package leverages this evolutionary relationship to cluster SARS-CoV-2 
@@ -12,7 +12,7 @@ Description: Collects current SARS-CoV-2 PANGO lineage child-parent relations
 URL: https://github.com/ChadFibke/linnet
 BugReports: https://github.com/ChadFibke/linnet/issues
 Depends: R (>= 4.0)
-License: `use_mit_license()`
+License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
@@ -23,5 +23,6 @@ Imports:
     jsonlite,
     yaml
 Suggests: 
-    testthat (>= 3.0.0)
+    testthat (>= 3.0.0),
+    mockery
 Config/testthat/edition: 3
