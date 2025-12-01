@@ -11,9 +11,9 @@ test_that(".fetch_lineages loads and parses YAML correctly", {
   )
   
   # Create mocks for each step in collection
-  mock_get <- mock("test_http")
+  mock_get <- mockery::mock("test_http")
   
-  mock_content  <- mock("
+  mock_content  <- mockery::mock("
   - name: A
   alias: A
   parent:
@@ -25,13 +25,13 @@ test_that(".fetch_lineages loads and parses YAML correctly", {
   parent: A
   ")
   
-  mock_yaml <- mock(test_yaml)
+  mock_yaml <- mockery::mock(test_yaml)
 
   
   # Insert mocks
-  stub(.fetch_lineages, "httr::GET", mock_get)
-  stub(.fetch_lineages, "httr::content", mock_content)
-  stub(.fetch_lineages, "yaml::yaml.load", mock_yaml)
+  mockery::stub(.fetch_lineages, "httr::GET", mock_get)
+  mockery::stub(.fetch_lineages, "httr::content", mock_content)
+  mockery::stub(.fetch_lineages, "yaml::yaml.load", mock_yaml)
   
   # Chaining get, content, and load work
   expect_equal(.fetch_lineages("test_url"), test_yaml)
@@ -66,7 +66,7 @@ test_that("read_lineages returns correct graph for recombinants", {
   
   
   # Mock yaml  
-  mock_fetch <- mock(
+  mock_fetch <- mockery::mock(
     list(
       list(name = "A", alias = "A", parent = NULL),
       list(name = "B", alias = "B", parent = "A"),
@@ -74,7 +74,7 @@ test_that("read_lineages returns correct graph for recombinants", {
       list(name = "X", alias = "X", parent = "X") )
   )
   
-  stub(read_lineages, ".fetch_lineages", mock_fetch)
+  mockery::stub(read_lineages, ".fetch_lineages", mock_fetch)
   
   test_dt <- data.frame(
     from = c("root","A","A", "B"),

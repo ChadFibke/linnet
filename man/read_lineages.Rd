@@ -2,7 +2,7 @@
 % Please edit documentation in R/read_lineages.R
 \name{read_lineages}
 \alias{read_lineages}
-\title{Reads in SARS-CoV-2 Lineage Data}
+\title{Reads and Converts SARS-CoV-2 Lineages into an igraph object}
 \usage{
 read_lineages()
 }
@@ -10,8 +10,9 @@ read_lineages()
 An igraph object.
 }
 \description{
-\code{read_lineages()} reads in the current SARS-CoV-2 PANGO lineage data from
-outbreak.info and represents this information in a directed network
+\code{read_lineages()} downloads the current SARS-CoV-2 PANGO lineage data from
+outbreak.info, converts it to a tabular structure, and returns a directed
+network
 }
 \examples{
 lineage_network <- read_lineages()
