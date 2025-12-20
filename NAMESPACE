@@ -2,6 +2,7 @@
 
 export(categorize)
 export(decedents)
+export(detect_groups)
 export(parents)
 export(read_lineages)
 importFrom(data.table,`%chin%`)

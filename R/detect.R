@@ -1,6 +1,6 @@
 #' Find the most recent common ancestor (MRCA)
 #'
-#' Internal function used by `cumsum_binning()`.
+#' Internal function used by `detect_groups()`.
 #'
 #' @keywords internal
 .mrca <- function(graph_obj, lineages) {
@@ -30,7 +30,7 @@
 
 #' Subsets network to observed lineages
 #'
-#' Internal function used by `cumsum_binning()`.
+#' Internal function used by `detect_groups()`.
 #'
 #' @keywords internal
 .subset_graph <- function(graph_obj, root, lineages){
@@ -71,7 +71,7 @@
 
 #' Assign a numeric attribute to vertices in network
 #'
-#' Internal function used by `cumsum_binning()`.
+#' Internal function used by `detect_groups()`.
 #'
 #' @keywords internal
 .annotate <- function(graph_obj, lineages, values, default = 0 ){
@@ -98,7 +98,7 @@
 
 # Clip and append recombinant clades to root
 #'
-#' Internal function used by `cumsum_binning()`.
+#' Internal function used by `detect_groups()`.
 #'
 #' @keywords internal
 .split_recombinants <- function(graph_obj){
@@ -137,7 +137,7 @@
 
 # Cumulatively sums with reset above threshold from leaves to root using a breadth first search
 #'
-#' Internal function used by `cumsum_binning()`.
+#' Internal function used by `detect_groups()`.
 #'
 #' @keywords internal
 .threshold_cumsum <- function(graph_obj, threshold){
@@ -205,9 +205,73 @@
 }
 
 
-#' Empirically Determine Lineages Groups Which Meet a Certain Threshold
+# Iteratively prune tree from bottom up until N non-zero lineages remain
+#'
+#' Internal function used by `detect_groups()`.
+#'
+#' @keywords internal
+.topn <- function(graph_obj, n){
+  
+  lineage_tracker <- igraph::V(graph_obj)$value
+  names(lineage_tracker) <- igraph::V(graph_obj)$name
+  
+  
+  # Identify distance between all lineages ordered by placement in tree
+  distances_matrix <- igraph::distances(graph_obj,
+                                v = names(lineage_tracker),
+                                to = names(lineage_tracker),
+                                mode = "all")
+  
+  distances_matrix[is.infinite(distances_matrix) | distances_matrix == 0 ] <- NA
+  
+  # Child tracker
+  children_list <- lapply( V(graph_obj),
+                           function(LINEAGE) igraph::as_ids(igraph::neighbors(graph_obj, LINEAGE, mode="out")))
+  
+  
+  while (length( lineage_tracker[ lineage_tracker > 0]) > n) {
+    
+    # Collect leaf lineage
+    leaves <- lengths( children_list[ names(lineage_tracker[ lineage_tracker > 0])] ) 
+    
+    # order by value, while prioritizing leaves
+    mate1 <- names( which.min(lineage_tracker[lineage_tracker > 0][ order( lineage_tracker[lineage_tracker > 0], leaves ) ] ))
+    
+    
+    # Collect the closest lineage(s)
+    mate2 <- names(which( distances_matrix[mate1, names(lineage_tracker) ] == min(distances_matrix[mate1, names(lineage_tracker)], na.rm = TRUE)) )
+    
+    # If there are multiple lineage collect the lineage with most similar values
+    # or smaller
+    if ( length(mate2) > 1) {
+      
+      mate2 <-  names( which.min( lineage_tracker[mate2] - lineage_tracker[mate1] ) )
+    }
+    
+    collapsed_group = .mrca(graph_obj, lineages = c(mate1, mate2) )
+    
+    # Sum and assign values 
+    lineage_tracker[ collapsed_group ] <- sum( lineage_tracker[ c(mate1, mate2)], na.rm = TRUE )
+    
+    to_remove <- setdiff( c(mate1, mate2), collapsed_group )
+    
+    # Update tracker
+    lineage_tracker <- lineage_tracker[ !( names(lineage_tracker) %chin% to_remove ) ]
+    
+    # Update children list
+    children_list[[to_remove]] <- NULL
+    children_list <- lapply(children_list, function(x) { x[!x %in% to_remove] })
+    
+  }
+  
+  
+  return(names( lineage_tracker[lineage_tracker > 0 ]) )
+}
+
+
+#' Empirically Determine Predominant Lineage Groups
 #' 
-#' `cumsum_binning()` returns SARS-CoV-2 lineages which can be used to as groups
+#' `detect_groups()` returns SARS-CoV-2 lineages which can be used to as groups
 #'  for `categorize()`.
 #'  
 #' @importFrom igraph V
@@ -218,26 +282,30 @@
 #' @param lineages  A vector of observed SARS-CoV-2 lineages.
 #' 
 #' @param values  A vector of observed SARS-CoV-2 lineage quantities (numeric).
-#' 
-#' @param parental_group A character vector of a lineage(s) which we would like
-#'  to categorize into.
 #'  
 #' @param threshold Minimum numeric quantity required to identify lineages (numeric).
-#' Must be greater than 0
+#' Must be greater than 0. Predominant lineage groups are identified via cumulative
+#' sum of observed lineages with reset after a threshold is achieved. 
+#' 
+#' @param n Number of predominant lineages which capture all observed sub-lineage frequencies.
+#' Top n lineage groups are identified via bottom up pruning.
 #' 
 #' @returns A character vector of SARS-CoV-2 lineages 
 #' 
 #' @examples
-#' #An example of identifying the nearest parental lineage to "KP.3.1.1"
+#' # Identify predominant lineages which, when pooled with their sub-lineages, meet a count of 10
 #' lineage_graph <- read_lineages()
 #' lineages <- c("KP.3", "KP.3.1", "KP.3.1.1", "KP.3.1.4", "XEF" )
 #' values = c( 1, 1, 5, 5, 10) 
 #' 
-#' # Identify lineages which can have sub-lineages collapsed to meet a count of 10
-#' cumsum_binning(lineage_graph, lineages, values, 10)
-#'
+#' detect_groups(lineage_graph, lineages, values, threshold = 10)
+#' 
+#' #Identify the top 2 lineages which capture all observed sub-lineages
+#' detect_groups(lineage_graph, lineages, values, n = 2)
+#' 
+#' 
 #' @export
-cumsum_binning <- function(graph_obj, lineages, values, threshold = NULL ){
+detect_groups <- function(graph_obj, lineages, values, threshold = NULL, n = NULL ){
   
   if (!igraph::is.igraph(graph_obj)) {
     stop("Must supply an igraph object for 'graph_obj'")
@@ -259,10 +327,23 @@ cumsum_binning <- function(graph_obj, lineages, values, threshold = NULL ){
     stop("Must supply equal length vectors for 'lineages' and 'values'")
   }
   
-  if ( threshold <= 0) {
-    stop("Must supply a threshold > 0")
+  # Check if both arguments are provided
+  if ( (is.null(threshold) && is.null(n)) || (!is.null(threshold) && !is.null(n)) ) {
+    stop("Must provide 'threshold' or 'n' arguments.")
+  }
+
+  if (!is.null(threshold)) {
+    if ( threshold <= 0) {
+      stop("Must supply a threshold > 0")
+    }
   }
   
+  
+  if (!is.null(n)) {
+    if ( n <= 0) {
+      stop("Must supply a n > 0")
+    }
+  }
   
   # Find a simplified root/MRCA 
   new_root <- .mrca(graph_obj, lineages)
@@ -273,15 +354,27 @@ cumsum_binning <- function(graph_obj, lineages, values, threshold = NULL ){
   # Assign counts
   graph_annotated <- .annotate(graph_subset, lineages, values, default = 0)
   
-  # make separate graphs for proper cumsum count
+  # make separate graphs for proper count
   graph_split <- .split_recombinants(graph_annotated)
   
-  # Propagate values up graphs with cumsum, reset count as threshold is met
-  graph_cummulative <- .threshold_cumsum(graph_split, threshold)
   
-  # Identify groups
-  identified <- V(graph_cummulative)$name[ V(graph_cummulative)$value >= threshold ]
+  if ( !is.null(threshold) ) {
+    
+    # Propagate values up graphs with cumsum, reset count as threshold is met
+    graph_cummulative <- .threshold_cumsum(graph_split, threshold)
+    
+    # Identify groups
+    identified <- V(graph_cummulative)$name[ V(graph_cummulative)$value >= threshold ]
+    
+  }
   
+  
+  if ( !is.null(n) ) {
+    
+    # Iterativly prune tree until n amount of lineages remain  
+    identified <- .topn(graph_split, n)
+    
+  }
+
   return(identified)
 }
-

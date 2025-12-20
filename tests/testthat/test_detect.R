@@ -150,35 +150,68 @@ test_that(".threshold_cumsum returns expeted lineages", {
                 c(1, 1, 5) )
 })
 
+test_that(".topn returns expeted lineages", {
+  
+  test_graph <- igraph::graph_from_data_frame( 
+    data.frame(from = c("A", "A", "A", "A", "X", "X.1" ), 
+               to  = c("B", "C", "X", "XX", "X.1", "G")),
+    vertices =  data.frame(name = c("A", "B", "C", "X", "X.1", "G", "XX"), 
+                           value = c(0, 1, 1, 0, 1, 5, 2) ),
+    directed = TRUE)
+  
+  
+  # Expected values use of n = vc with zero values
+  expect_equal( .topn(test_graph, igraph::vcount(test_graph)), c("B", "C", "X.1", "G", "XX") )
+  
+  # Expected values use of n = 3
+  expect_equal( .topn(test_graph, 3), c("A", "G", "XX") )
+  
+  # Expected values use of n = 2
+  expect_equal( .topn(test_graph, 2), c("A", "G") )
+  
+  # Expected values use of n = 1
+  expect_equal( .topn(test_graph, 1), c("A") )
+  
+})
 
-test_that("cumsum_binning returns expeted errors", {
+test_that("detect_groups returns expeted errors", {
   
   test_graph <- igraph::graph_from_data_frame( 
     data.frame(from = c("A", "A", "A", "A", "X", "X.1" ), 
                to  = c("B", "C", "X", "XX", "X.1", "G")),
     directed = TRUE)
   
-    expect_error( cumsum_binning( data.frame(),"X", 1, 1),
+    expect_error( detect_groups( data.frame(),"X", 1, threshold = 1),
                   regexp = "Must supply an igraph object")
     
-    expect_error( cumsum_binning( test_graph, 1, 1, 1),
+    expect_error( detect_groups( test_graph, 1, 1, threshold = 1),
                   regexp = "Must supply a character vector")
     
-    expect_error( cumsum_binning( test_graph, c("X", "X"), c(1,1), 1),
+    expect_error( detect_groups( test_graph, c("X", "X"), c(1,1), threshold = 1),
                   regexp = "Lineage entries must be unique")
     
-    expect_error( cumsum_binning( test_graph, c("X", "Y"), c(TRUE,FALSE), 1),
+    expect_error( detect_groups( test_graph, c("X", "Y"), c(TRUE,FALSE), threshold = 1),
                   regexp = "Must supply a numeric vector")
     
-    expect_error( cumsum_binning( test_graph, c("X", "Y"), c(1), 1),
+    expect_error( detect_groups( test_graph, c("X", "Y"), c(1), threshold = 1),
                   regexp = "Must supply equal length vectors")
     
-    expect_error( cumsum_binning( test_graph, c("X", "Y"), c(1, 1), -1),
+    expect_error( detect_groups( test_graph, c("X", "Y"), c(1, 1), threshold =  -1),
                   regexp = "Must supply a threshold > 0")
-})
+    
+    expect_error( detect_groups( test_graph, c("X", "Y"), c(1, 1), n =  -1),
+                  regexp = "Must supply a n > 0")
+    
+    expect_error( detect_groups( test_graph, c("X", "Y"), c(1, 1)),
+                  regexp = "Must provide")
+    
+    expect_error( detect_groups( test_graph, c("X", "Y"), c(1, 1), threshold = 0, n = 1),
+                  regexp = "Must provide")
+
+    })
 
 
-test_that("cumsum_binning returns expeted values", {
+test_that("detect_groups returns expeted values", {
   
   test_graph <- igraph::graph_from_data_frame( 
     data.frame(from = c("A", "A", "A", "A", "X", "X.1" ), 
@@ -188,9 +221,12 @@ test_that("cumsum_binning returns expeted values", {
   lineages <- c("A", "B", "C", "X", "X.1", "G", "XX")
   values <- c(0, 1, 1, 0, 1, 5, 2)
   
-  expect_equal( cumsum_binning( test_graph, lineages, values, 2), c("A", "XX", "G") )
-  expect_equal( cumsum_binning( test_graph, lineages, values, 3), c("A", "G") )
-  expect_equal( cumsum_binning( test_graph, lineages, values, 6), "X.1" )
-  expect_equal( cumsum_binning( test_graph, lineages, values, 10), "A" )
+  expect_equal( detect_groups( test_graph, lineages, values, threshold = 2), c("A", "XX", "G") )
+  expect_equal( detect_groups( test_graph, lineages, values, threshold = 3), c("A", "G") )
+  expect_equal( detect_groups( test_graph, lineages, values, threshold = 6), "X.1" )
+  expect_equal( detect_groups( test_graph, lineages, values, threshold = 10), "A" )
+  
+  expect_equal( detect_groups( test_graph, lineages, values, threshold = 10),
+                detect_groups( test_graph, lineages, values, n = 1) )
 
 })
