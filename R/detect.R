@@ -144,7 +144,6 @@
   
   # Set up
   size <- igraph::vcount(graph_obj)
-  root <- which( igraph::degree(graph_obj, mode = "in") == 0 )
   
   cumsum_values <- numeric(size)
   capped  <- logical(size)
@@ -363,8 +362,14 @@ detect_groups <- function(graph_obj, lineages, values, threshold = NULL, n = NUL
     # Propagate values up graphs with cumsum, reset count as threshold is met
     graph_cummulative <- .threshold_cumsum(graph_split, threshold)
     
-    # Identify groups
+    # Identify groups which meet threshold and use root as a catch all
+    # if any lineage quantity remains
     identified <- V(graph_cummulative)$name[ V(graph_cummulative)$value >= threshold ]
+    
+    if ( V(graph_cummulative)$value[1] > 0 ) {
+      
+      identified <- unique( c(V(graph_cummulative)$name[1], identified) )
+    }
     
   }
   
