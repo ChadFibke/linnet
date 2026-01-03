@@ -38,9 +38,8 @@ example_graph <- read_lineages()
 
 ```
 
-The `read_lineages()` function will always download the current Pango data, so 
-if you would need to save the graph to file and read it in if you would like to 
-reproduce the results you achieved on a given day.
+The `read_lineages()` function will always download the current Pango data. You would
+need to save the graph to file and read it in to reproduce the results you achieved on a given day.
 
 `igraph::write_graph(example_graph, file = "/Path/to/lineage_graph.graphml"), format = "graphml")`
 
@@ -67,7 +66,12 @@ parents(example_graph, "XBB")
 ### Categorize
 
 The linnet package can also categorize observed lineages into their closest
-parental groups. All recombinant lineages, and lineages which descend recombinants are grouped into a "Recombinants" category. However, adding a recombinant lineage of interest to the parental group will categorize all decedents of this lineages into this group, and will categorize all other recombinant into the "Recombinants" category. 
+parental groups. All recombinant lineages, and lineages which descend recombinants
+are grouped into a "Recombinants" category. However, adding a recombinant lineage
+of interest to the parental group will categorize all decedents of this lineages 
+into this group, and will categorize all other recombinant into the "Recombinants" 
+category. All other lineages which do not descend from a parental group are
+placed into set default lineage category.
 
 
 ```{r categorize}
@@ -87,7 +91,7 @@ categorize(example_graph, lineage_of_interest = c("KP.1", "KP.2", "LP.8", "JN.1"
 Sometimes we know which groups we are interested in. However, there are times we would 
 like to categorize based on the quantity of lineages. Linnet has the ability to
 detect the most granular lineage groups, which either meet a threshold or are the top n
-predominant lineage groups in your data. This functions works with any quantity 
+predominant lineage groups in your data. This function works with any quantity 
 (relative frequency, counts, or other numeric values). 
 
 In the below example lets imagine we have the following aggregate data of several
@@ -126,21 +130,21 @@ thousands of SARS-CoV-2 lineages, so the code will first subset the full graph
 to one with all observed lineages, the most recent common ancestor of all observed lineages, and
 all unobserved lineages between. This sub-graph will have all aggregate counts assigned
 to the corresponding observed lineages. Next, all recombinants, and their descendants,
-are pruned, and reattached to the root lineage. This is to avoid propagating the recombinant
-values twice. The code will then conduct a cumulative sum of the lineage values
-from the leaves/bottom of the graph to the root/top. This cumulative sum uses a
-breadth first search to sum the values of all the direct children of a lineage to
-the lineage. This process is repeated until a threshold is met. Once met, the 
-cumulative sum is reset to zero and traverses up the tree as above, but ignores
-the lineages which has met the threshold. The code then returns all lineages
-which have met the threshold. The most recent common ancestor is also returned if
-there are any remaining lineage values not contributing to the above identify lineages.
-This serves as an all others bin. 
+are pruned as a clade, and reattached as a direct descendant to the root lineage.
+This is to avoid propagating the recombinant values twice. The code will then 
+conduct a cumulative sum of the lineage values from the leaves/bottom of the graph
+to the root/top. This cumulative sum uses a breadth first search to sum the values
+of all the direct children to their parent lineage. This process is repeated until
+a threshold is met. Once met, the cumulative sum is reset to zero and traverses 
+up the tree as above, but ignores lineages which has met the threshold. The code
+then returns all lineages which have met the threshold.
 
 ![](man/figures/step2.png)
 
-The identified lineages can then be used in the categorize function to group
-all supporting sub-lineages into their predominant parental groups. In turn,
-this can simplify noisy plots to more predominant lineages.
+The identified lineages can then be used in the `categorize()` function to group
+all supporting sub-lineages into their predominant parental groups. Less frequent
+lineages, which do not descend a parental lineage, are assigned to a default 
+lineage category set by the user. In turn, this can simplify noisy plots to
+more predominant lineages.
 
 ![](man/figures/step3.png)

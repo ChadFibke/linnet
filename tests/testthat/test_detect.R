@@ -223,7 +223,7 @@ test_that("detect_groups returns expeted values", {
   
   expect_equal( detect_groups( test_graph, lineages, values, threshold = 2), c("A", "XX", "G") )
   expect_equal( detect_groups( test_graph, lineages, values, threshold = 3), c("A", "G") )
-  expect_equal( detect_groups( test_graph, lineages, values, threshold = 6), c( "A", "X.1") )
+  expect_equal( detect_groups( test_graph, lineages, values, threshold = 6), "X.1" )
   expect_equal( detect_groups( test_graph, lineages, values, threshold = 10), "A" )
   
   expect_equal( detect_groups( test_graph, lineages, values, threshold = 10),
